@@ -3,13 +3,18 @@ package db
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func NewPostgresPool() (*pgxpool.Pool, error) {
-	dsn := "postgres://invoice_user:invoice_password@localhost:5432/invoice_automation"
+	dsn := os.Getenv("DATABASE_URL")
+
+	if dsn == "" {
+		return nil, fmt.Errorf("DATABASE_URL is not configured")
+	}
 
 	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
