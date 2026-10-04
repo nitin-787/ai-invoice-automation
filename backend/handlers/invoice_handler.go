@@ -47,10 +47,26 @@ func (h *InvoiceHandler) CreateInvoice(c *gin.Context) {
 func (h *InvoiceHandler) ApproveInvoice(c *gin.Context) {
 	invoiceID := c.Param("id")
 
+	reviewer, exists := c.Get("reviewer")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "reviewer identity not found",
+		})
+		return
+	}
+
+	reviewerName, ok := reviewer.(string)
+	if !ok || reviewerName == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "invalid reviewer identity",
+		})
+		return
+	}
+
 	if err := h.service.ApproveInvoice(
 		c.Request.Context(),
 		invoiceID,
-		"human-reviewer",
+		reviewerName,
 	); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -68,10 +84,26 @@ func (h *InvoiceHandler) ApproveInvoice(c *gin.Context) {
 func (h *InvoiceHandler) RejectInvoice(c *gin.Context) {
 	invoiceID := c.Param("id")
 
+	reviewer, exists := c.Get("reviewer")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "reviewer identity not found",
+		})
+		return
+	}
+
+	reviewerName, ok := reviewer.(string)
+	if !ok || reviewerName == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "invalid reviewer identity",
+		})
+		return
+	}
+
 	if err := h.service.RejectInvoice(
 		c.Request.Context(),
 		invoiceID,
-		"human-reviewer",
+		reviewerName,
 	); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),

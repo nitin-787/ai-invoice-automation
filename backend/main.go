@@ -11,6 +11,7 @@ import (
 	"github.com/nitin-787/ai-invoice-automation/handlers"
 	"github.com/nitin-787/ai-invoice-automation/repository"
 	"github.com/nitin-787/ai-invoice-automation/services"
+	"github.com/nitin-787/ai-invoice-automation/middleware"
 )
 
 func main() {
@@ -49,9 +50,14 @@ func main() {
 	{
 		api.POST("/invoices", invoiceHandler.CreateInvoice)
 		api.POST("/invoices/extract", aiHandler.ExtractInvoice)
-		api.POST("/invoices/:id/approve", invoiceHandler.ApproveInvoice)
-		api.POST("/invoices/:id/reject", invoiceHandler.RejectInvoice)
 		api.POST("/invoices/extract/file", aiHandler.ExtractInvoiceFile)
+
+		approval := api.Group("/invoices/:id")
+		approval.Use(middleware.APIKeyAuth())
+		{
+			approval.POST("/approve", invoiceHandler.ApproveInvoice)
+			approval.POST("/reject", invoiceHandler.RejectInvoice)
+		}
 	}
 
 	if err := router.Run(":8080"); err != nil {
