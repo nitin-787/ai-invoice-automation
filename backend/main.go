@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -84,7 +85,12 @@ func main() {
 		}
 	}
 
-	if err := router.Run(":8080"); err != nil {
+	port := os.Getenv("PORT")
+	if port == "" {
+    	port = "8080"
+	}
+
+	if err := router.Run(":" + port); err != nil {
 		log.Fatal(err)
 	}
 }
