@@ -63,13 +63,13 @@ export default async function InvoiceDetailsPage({
 
   return (
     <div className="app-shell">
-      <Sidebar />
+      {/* <Sidebar /> */}
 
       <main className="main">
-        <Header
+        {/* <Header
           title="Invoice details"
           description="Review invoice information and processing status."
-        />
+        /> */}
 
         <div className="page-content">
           <Link href="/invoices" className="back-link">
@@ -90,7 +90,9 @@ export default async function InvoiceDetailsPage({
             </div>
           </div>
 
-          <InvoiceActions id={invoice.id} />
+          {invoice.status === "PENDING_APPROVAL" && (
+            <InvoiceActions id={invoice.id} />
+          )}
 
           <div className="detail-grid">
             <section className="content-card">

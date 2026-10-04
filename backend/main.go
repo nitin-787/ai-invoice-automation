@@ -14,6 +14,24 @@ import (
 	"github.com/nitin-787/ai-invoice-automation/services"
 )
 
+func corsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Writer.Header().Set(
+			"Access-Control-Allow-Headers",
+			"Origin, Content-Type, Accept, Authorization, X-API-Key, X-Reviewer",
+		)
+
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Next()
+	}
+}
+
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Printf("warning: .env file not found")
@@ -37,6 +55,9 @@ func main() {
 	aiHandler := handlers.NewAIHandler(aiService, invoiceService)
 
 	router := gin.Default()
+
+	// CORS
+	router.Use(corsMiddleware())
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{

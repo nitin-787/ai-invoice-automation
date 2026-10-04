@@ -61,13 +61,13 @@ export default function CreateInvoicePage() {
 
   return (
     <div className="app-shell">
-      <Sidebar />
+      {/* <Sidebar /> */}
 
       <main className="main">
-        <Header
+        {/* <Header
           title="Create invoice"
           description="Add a new invoice to the automation pipeline."
-        />
+        /> */}
 
         <div className="page-content">
           <Link href="/invoices" className="back-link">
