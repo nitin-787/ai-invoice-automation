@@ -43,3 +43,45 @@ func (h *InvoiceHandler) CreateInvoice(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, invoice)
 }
+
+func (h *InvoiceHandler) ApproveInvoice(c *gin.Context) {
+	invoiceID := c.Param("id")
+
+	if err := h.service.ApproveInvoice(
+		c.Request.Context(),
+		invoiceID,
+		"human-reviewer",
+	); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"status":  "APPROVED",
+		"message": "Invoice approved successfully",
+	})
+}
+
+func (h *InvoiceHandler) RejectInvoice(c *gin.Context) {
+	invoiceID := c.Param("id")
+
+	if err := h.service.RejectInvoice(
+		c.Request.Context(),
+		invoiceID,
+		"human-reviewer",
+	); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"status":  "REJECTED",
+		"message": "Invoice rejected successfully",
+	})
+}

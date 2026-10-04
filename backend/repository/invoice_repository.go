@@ -147,3 +147,33 @@ func (r *InvoiceRepository) CreateApprovalLog(
 
 	return nil
 }
+
+func (r *InvoiceRepository) UpdateStatus(
+	ctx context.Context,
+	invoiceID string,
+	status string,
+) error {
+	query := `
+		UPDATE invoices
+		SET status = $1,
+		    updated_at = NOW()
+		WHERE id = $2
+		  AND status = 'PENDING_APPROVAL'
+	`
+
+	result, err := r.db.Exec(
+		ctx,
+		query,
+		status,
+		invoiceID,
+	)
+	if err != nil {
+		return fmt.Errorf("update invoice status: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("invoice not found or not pending approval")
+	}
+
+	return nil
+}

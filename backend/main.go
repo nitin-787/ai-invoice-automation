@@ -35,6 +35,8 @@ func main() {
 	api := router.Group("/api/v1")
 	{
 		api.POST("/invoices", invoiceHandler.CreateInvoice)
+		api.POST("/invoices/:id/approve", invoiceHandler.ApproveInvoice)
+		api.POST("/invoices/:id/reject", invoiceHandler.RejectInvoice)
 	}
 
 	if err := router.Run(":8080"); err != nil {

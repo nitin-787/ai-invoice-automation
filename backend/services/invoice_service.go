@@ -99,3 +99,59 @@ func (s *InvoiceService) ProcessInvoice(
 
 	return nil
 }
+
+func (s *InvoiceService) ApproveInvoice(
+	ctx context.Context,
+	invoiceID string,
+	actor string,
+) error {
+	if err := s.repository.UpdateStatus(
+		ctx,
+		invoiceID,
+		"APPROVED",
+	); err != nil {
+		return err
+	}
+
+	reason := "Invoice approved by human reviewer"
+
+	if err := s.repository.CreateApprovalLog(
+		ctx,
+		invoiceID,
+		"APPROVED",
+		&actor,
+		&reason,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *InvoiceService) RejectInvoice(
+	ctx context.Context,
+	invoiceID string,
+	actor string,
+) error {
+	if err := s.repository.UpdateStatus(
+		ctx,
+		invoiceID,
+		"REJECTED",
+	); err != nil {
+		return err
+	}
+
+	reason := "Invoice rejected by human reviewer"
+
+	if err := s.repository.CreateApprovalLog(
+		ctx,
+		invoiceID,
+		"REJECTED",
+		&actor,
+		&reason,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
