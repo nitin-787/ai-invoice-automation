@@ -2,10 +2,18 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/nitin-787/ai-invoice-automation/models"
 	"github.com/nitin-787/ai-invoice-automation/repository"
+)
+
+var (
+	ErrDuplicateInvoice  = errors.New("duplicate invoice")
+	ErrInvoiceNotPending = errors.New("invoice is not pending approval")
+	ErrInvoiceIDRequired = errors.New("invoice ID is required")
 )
 
 const autoApprovalLimit = 50000.00
@@ -26,6 +34,20 @@ func (s *InvoiceService) ProcessInvoice(
 	ctx context.Context,
 	invoice *models.Invoice,
 ) error {
+	invoice.InvoiceNumber = strings.TrimSpace(invoice.InvoiceNumber)
+	invoice.VendorName = strings.TrimSpace(invoice.VendorName)
+	invoice.Currency = strings.TrimSpace(invoice.Currency)
+	invoice.Source = strings.TrimSpace(invoice.Source)
+
+	if invoice.VendorEmail != nil {
+		email := strings.TrimSpace(*invoice.VendorEmail)
+		invoice.VendorEmail = &email
+	}
+
+	if invoice.Description != nil {
+		description := strings.TrimSpace(*invoice.Description)
+		invoice.Description = &description
+	}
 
 	if invoice.VendorName == "" {
 		return fmt.Errorf("vendor name is required")
@@ -50,7 +72,8 @@ func (s *InvoiceService) ProcessInvoice(
 
 	if duplicate {
 		return fmt.Errorf(
-			"duplicate invoice: %s from %s",
+			"%w: %s from %s",
+			ErrDuplicateInvoice,
 			invoice.InvoiceNumber,
 			invoice.VendorName,
 		)
@@ -72,10 +95,6 @@ func (s *InvoiceService) ProcessInvoice(
 		invoice.Source = "api"
 	}
 
-	if err := s.repository.Create(ctx, invoice); err != nil {
-		return err
-	}
-
 	action := "SUBMITTED"
 
 	if invoice.Status == "APPROVED" {
@@ -87,9 +106,9 @@ func (s *InvoiceService) ProcessInvoice(
 		invoice.Amount,
 	)
 
-	if err := s.repository.CreateApprovalLog(
+	if err := s.repository.CreateWithApprovalLog(
 		ctx,
-		invoice.ID,
+		invoice,
 		action,
 		nil,
 		&reason,
@@ -105,11 +124,30 @@ func (s *InvoiceService) ApproveInvoice(
 	invoiceID string,
 	actor string,
 ) error {
+	invoiceID = strings.TrimSpace(invoiceID)
+	actor = strings.TrimSpace(actor)
+
+	if invoiceID == "" {
+		return ErrInvoiceIDRequired
+	}
+
+	if actor == "" {
+		return fmt.Errorf("reviewer identity is required")
+	}
+
 	if err := s.repository.UpdateStatus(
 		ctx,
 		invoiceID,
 		"APPROVED",
 	); err != nil {
+		if strings.Contains(err.Error(), "not pending approval") {
+			return fmt.Errorf(
+				"%w: %s",
+				ErrInvoiceNotPending,
+				invoiceID,
+			)
+		}
+
 		return err
 	}
 
@@ -133,11 +171,30 @@ func (s *InvoiceService) RejectInvoice(
 	invoiceID string,
 	actor string,
 ) error {
+	invoiceID = strings.TrimSpace(invoiceID)
+	actor = strings.TrimSpace(actor)
+
+	if invoiceID == "" {
+		return ErrInvoiceIDRequired
+	}
+
+	if actor == "" {
+		return fmt.Errorf("reviewer identity is required")
+	}
+
 	if err := s.repository.UpdateStatus(
 		ctx,
 		invoiceID,
 		"REJECTED",
 	); err != nil {
+		if strings.Contains(err.Error(), "not pending approval") {
+			return fmt.Errorf(
+				"%w: %s",
+				ErrInvoiceNotPending,
+				invoiceID,
+			)
+		}
+
 		return err
 	}
 
@@ -154,4 +211,23 @@ func (s *InvoiceService) RejectInvoice(
 	}
 
 	return nil
+}
+
+func (s *InvoiceService) GetAllInvoices(
+	ctx context.Context,
+) ([]models.Invoice, error) {
+	return s.repository.GetAll(ctx)
+}
+
+func (s *InvoiceService) GetInvoiceByID(
+	ctx context.Context,
+	invoiceID string,
+) (*models.Invoice, error) {
+	invoiceID = strings.TrimSpace(invoiceID)
+
+	if invoiceID == "" {
+		return nil, ErrInvoiceIDRequired
+	}
+
+	return s.repository.GetByID(ctx, invoiceID)
 }

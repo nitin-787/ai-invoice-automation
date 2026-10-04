@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -35,6 +36,13 @@ func (h *InvoiceHandler) CreateInvoice(c *gin.Context) {
 		c.Request.Context(),
 		&invoice,
 	); err != nil {
+		if errors.Is(err, services.ErrDuplicateInvoice) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -68,7 +76,21 @@ func (h *InvoiceHandler) ApproveInvoice(c *gin.Context) {
 		invoiceID,
 		reviewerName,
 	); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		if errors.Is(err, services.ErrInvoiceNotPending) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		if errors.Is(err, services.ErrInvoiceIDRequired) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
 		return
@@ -105,7 +127,21 @@ func (h *InvoiceHandler) RejectInvoice(c *gin.Context) {
 		invoiceID,
 		reviewerName,
 	); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		if errors.Is(err, services.ErrInvoiceNotPending) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		if errors.Is(err, services.ErrInvoiceIDRequired) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
 		return
@@ -115,5 +151,46 @@ func (h *InvoiceHandler) RejectInvoice(c *gin.Context) {
 		"success": true,
 		"status":  "REJECTED",
 		"message": "Invoice rejected successfully",
+	})
+}
+
+func (h *InvoiceHandler) GetInvoice(c *gin.Context) {
+	invoiceID := c.Param("id")
+
+	if invoiceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invoice ID is required",
+		})
+		return
+	}
+
+	invoice, err := h.service.GetInvoiceByID(
+		c.Request.Context(),
+		invoiceID,
+	)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, invoice)
+}
+
+func (h *InvoiceHandler) GetInvoices(c *gin.Context) {
+	invoices, err := h.service.GetAllInvoices(
+		c.Request.Context(),
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"invoices": invoices,
+		"count":    len(invoices),
 	})
 }

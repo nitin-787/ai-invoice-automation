@@ -9,9 +9,9 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nitin-787/ai-invoice-automation/db"
 	"github.com/nitin-787/ai-invoice-automation/handlers"
+	"github.com/nitin-787/ai-invoice-automation/middleware"
 	"github.com/nitin-787/ai-invoice-automation/repository"
 	"github.com/nitin-787/ai-invoice-automation/services"
-	"github.com/nitin-787/ai-invoice-automation/middleware"
 )
 
 func main() {
@@ -49,6 +49,9 @@ func main() {
 	api := router.Group("/api/v1")
 	{
 		api.POST("/invoices", invoiceHandler.CreateInvoice)
+		api.GET("/invoices", invoiceHandler.GetInvoices)
+		api.GET("/invoices/:id", invoiceHandler.GetInvoice)
+
 		api.POST("/invoices/extract", aiHandler.ExtractInvoice)
 		api.POST("/invoices/extract/file", aiHandler.ExtractInvoiceFile)
 
