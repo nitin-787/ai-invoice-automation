@@ -17,8 +17,22 @@ import (
 
 func corsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		origin := c.GetHeader("Origin")
+
+		allowedOrigins := map[string]bool{
+			"http://localhost:3000": true,
+			"https://ai-invoice-automation-gamma.vercel.app/": true,
+		}
+
+		if allowedOrigins[origin] {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+		}
+
+		c.Writer.Header().Set(
+			"Access-Control-Allow-Methods",
+			"GET, POST, PUT, DELETE, OPTIONS",
+		)
+
 		c.Writer.Header().Set(
 			"Access-Control-Allow-Headers",
 			"Origin, Content-Type, Accept, Authorization, X-API-Key, X-Reviewer",
