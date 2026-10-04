@@ -1,0 +1,8 @@
+﻿INVOICE
+Invoice Number: FILE-TEST-001
+Vendor: PDF Test Supplies Pvt Ltd
+Email: accounts@pdf-test.example
+Invoice Date: 2026-10-04
+Due Date: 2026-11-03
+Amount: INR 42000
+Description: Office supplies

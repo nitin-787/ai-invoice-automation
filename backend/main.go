@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/nitin-787/ai-invoice-automation/db"
 	"github.com/nitin-787/ai-invoice-automation/handlers"
 	"github.com/nitin-787/ai-invoice-automation/repository"
@@ -12,6 +14,10 @@ import (
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Printf("warning: .env file not found")
+	}
+
 	pool, err := db.NewPostgresPool()
 	if err != nil {
 		log.Fatalf("database connection failed: %v", err)
@@ -21,6 +27,13 @@ func main() {
 	invoiceRepository := repository.NewInvoiceRepository(pool)
 	invoiceService := services.NewInvoiceService(invoiceRepository)
 	invoiceHandler := handlers.NewInvoiceHandler(invoiceService)
+
+	aiService, err := services.NewAIService(context.Background())
+	if err != nil {
+		log.Fatalf("AI service initialization failed: %v", err)
+	}
+
+	aiHandler := handlers.NewAIHandler(aiService, invoiceService)
 
 	router := gin.Default()
 
@@ -35,8 +48,10 @@ func main() {
 	api := router.Group("/api/v1")
 	{
 		api.POST("/invoices", invoiceHandler.CreateInvoice)
+		api.POST("/invoices/extract", aiHandler.ExtractInvoice)
 		api.POST("/invoices/:id/approve", invoiceHandler.ApproveInvoice)
 		api.POST("/invoices/:id/reject", invoiceHandler.RejectInvoice)
+		api.POST("/invoices/extract/file", aiHandler.ExtractInvoiceFile)
 	}
 
 	if err := router.Run(":8080"); err != nil {
