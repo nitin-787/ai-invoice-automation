@@ -25,7 +25,7 @@ func (h *InvoiceHandler) CreateInvoice(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&invoice); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error":   "invalid request body",
+			"error":   "validation failed",
 			"details": err.Error(),
 		})
 		return

@@ -4,13 +4,13 @@ import "time"
 
 type Invoice struct {
 	ID               string     `json:"id"`
-	InvoiceNumber    string     `json:"invoice_number"`
-	VendorName       string     `json:"vendor_name"`
+	InvoiceNumber    string     `json:"invoice_number" binding:"required"`
+	VendorName       string     `json:"vendor_name" binding:"required"`
 	VendorEmail      *string    `json:"vendor_email,omitempty"`
 	InvoiceDate      *time.Time `json:"invoice_date,omitempty"`
 	DueDate          *time.Time `json:"due_date,omitempty"`
-	Amount           float64    `json:"amount"`
-	Currency         string     `json:"currency"`
+	Amount           float64    `json:"amount" binding:"required,gt=0"`
+	Currency         string     `json:"currency" binding:"required,len=3"`
 	Description      *string    `json:"description,omitempty"`
 	Status           string     `json:"status"`
 	Source           string     `json:"source"`
